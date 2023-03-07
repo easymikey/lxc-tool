@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use config::{RepoData, TargetUrl};
 use slog::{o, Drain};
-use slog_scope::error;
+use slog_scope::{error, info};
 use std::fs::read_to_string;
 use tempfile::Builder;
 use url::Url;
@@ -23,6 +23,8 @@ struct CmdDownloadContainers;
 
 impl CmdDownloadContainers {
     fn run(config: config::Config) -> Result<()> {
+        info!("Download containers started.");
+
         let RepoData {
             target_url: TargetUrl { origin, index_uri },
             container_filters,
@@ -34,11 +36,17 @@ impl CmdDownloadContainers {
         let tempfile = tempdir.path().join(tempfile_name).into_os_string();
         let tempfile_path = ContainerInfoDownload::new(url).download_to(tempfile)?;
         let tempfile_as_string = read_to_string(tempfile_path)?;
+
+        info!("Create LXC containers data started.");
         let lxc_containers =
             LXCContainers::build_collection(tempfile_as_string)?.filter_by(container_filters)?;
 
+        info!("Create LXC containers data done.");
+
         println!("{:#?}", lxc_containers);
-        println!("{:#?}", lxc_containers.len());
+        println!("Number of containers is {}", lxc_containers.len());
+
+        info!("Download containers done.");
 
         Ok(())
     }
