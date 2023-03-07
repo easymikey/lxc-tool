@@ -1,0 +1,12 @@
+### This file is copy from https://github.com/alexkaratarakis/gitattributes/blob/master/Rust.gitattributes
+
+# Auto detect text files and perform normalization
+*          text=auto
+
+*.rs       text diff=rust
+*.toml     text diff=toml
+Cargo.lock text
+
+# override example
+# *.bat    text eol=crlf
+
