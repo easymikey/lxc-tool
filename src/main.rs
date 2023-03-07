@@ -1,17 +1,21 @@
 use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
-use config::TargetUrl;
-use repodata::{container_info_download::ContainerInfoDownload, lxc_container::LXCContainer};
+use config::{RepoData, TargetUrl};
 use slog::{o, Drain};
 use slog_scope::error;
 use std::fs::read_to_string;
 use tempfile::Builder;
 use url::Url;
 
+use crate::repodata::{
+    container_info_download::ContainerInfoDownload, lxc_container::FilterBy,
+    lxc_container::LXCContainers,
+};
+
 mod config;
 mod repodata;
 
-const CONFIG_DEFAULT_PATH: &str = "/etc/lxc-mirror-tool.yaml";
+const CONFIG_DEFAULT_PATH: &str = "/etc/lxc-tool.yaml";
 
 /// Download
 #[derive(Args)]
@@ -19,16 +23,22 @@ struct CmdDownloadContainers;
 
 impl CmdDownloadContainers {
     fn run(config: config::Config) -> Result<()> {
-        let TargetUrl { origin, index_uri } = config.repodata.target_url;
+        let RepoData {
+            target_url: TargetUrl { origin, index_uri },
+            container_filters,
+            ..
+        } = config.repodata;
         let url = Url::parse(&origin)?.join(&index_uri)?;
         let tempfile_name = url.as_str().split("/").last().unwrap_or("tempfile");
         let tempdir = Builder::new().prefix(".repodata_").tempdir()?;
         let tempfile = tempdir.path().join(tempfile_name).into_os_string();
         let tempfile_path = ContainerInfoDownload::new(url).download_to(tempfile)?;
         let tempfile_as_string = read_to_string(tempfile_path)?;
-        let lxc_containers: Vec<_> = LXCContainer::build_collection(tempfile_as_string)?;
+        let lxc_containers =
+            LXCContainers::build_collection(tempfile_as_string)?.filter_by(container_filters)?;
 
-        println!("{:?}", lxc_containers);
+        println!("{:#?}", lxc_containers);
+        println!("{:#?}", lxc_containers.len());
 
         Ok(())
     }

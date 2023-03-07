@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum LogLevel {
     Critical,
     Error,
@@ -26,13 +26,13 @@ impl From<LogLevel> for slog::Level {
 
 pub type Timeout = u64;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TargetUrl {
     pub origin: String,
     pub index_uri: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LXCContainer {
     pub dist: String,
     pub release: String,
@@ -41,25 +41,29 @@ pub struct LXCContainer {
     pub type_: String,
     #[serde(default)]
     pub post_process: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub path: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostScript {
     pub path: String,
     pub timeout: Timeout,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepoData {
     pub host_root_dir: String,
     pub target_url: TargetUrl,
-    pub container_filter: Vec<LXCContainer>,
+    pub container_filters: Vec<LXCContainer>,
     pub download_files: Vec<String>,
     pub number_of_container_to_backup: i16,
     pub post_script: PostScript,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub log_level: LogLevel,
     pub repodata: RepoData,

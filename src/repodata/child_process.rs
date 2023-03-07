@@ -1,10 +1,8 @@
 use crate::config::Timeout;
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 use std::{process::Command, time::Duration};
 use wait_timeout::ChildExt;
 
-#[derive(Debug, Serialize, Deserialize)]
 struct ChildProcess {
     path_to_bin: String,
     arg: String,
