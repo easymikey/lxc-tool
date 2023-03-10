@@ -33,18 +33,58 @@ pub struct TargetUrl {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LXCContainer {
-    pub dist: String,
-    pub release: String,
-    pub arch: String,
+pub struct ContainerFilter {
+    #[serde(default)]
+    pub dist: Option<String>,
+    #[serde(default)]
+    pub release: Option<String>,
+    #[serde(default)]
+    pub arch: Option<String>,
     #[serde(rename = "type", default)]
-    pub type_: String,
+    pub type_: Option<String>,
     #[serde(default)]
-    pub post_process: String,
-    #[serde(default)]
-    pub name: String,
-    #[serde(default)]
-    pub path: String,
+    pub post_process: Option<String>,
+}
+
+impl IntoIterator for ContainerFilter {
+    type Item = (String, String);
+    type IntoIter = ContainerFilterIntoIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ContainerFilterIntoIterator {
+            container_filter: self,
+            index: 0,
+        }
+    }
+}
+
+pub struct ContainerFilterIntoIterator {
+    container_filter: ContainerFilter,
+    index: usize,
+}
+
+impl Iterator for ContainerFilterIntoIterator {
+    type Item = (String, String);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let container_filter_slice = [
+            ("dist", &self.container_filter.dist),
+            ("release", &self.container_filter.release),
+            ("arch", &self.container_filter.arch),
+            ("type", &self.container_filter.type_),
+        ];
+
+        let result = match container_filter_slice.get(self.index) {
+            Some((key, value)) => match value {
+                Some(value) => (key.to_string(), value.to_string()),
+                None => return None,
+            },
+            _ => return None,
+        };
+
+        self.index += 1;
+        Some(result)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,7 +97,7 @@ pub struct PostScript {
 pub struct RepoData {
     pub host_root_dir: String,
     pub target_url: TargetUrl,
-    pub container_filters: Vec<LXCContainer>,
+    pub container_filters: Vec<ContainerFilter>,
     pub download_files: Vec<String>,
     pub number_of_container_to_backup: i16,
     pub post_script: PostScript,

@@ -1,15 +1,11 @@
 use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
-use config::{RepoData, TargetUrl};
 use slog::{o, Drain};
 use slog_scope::{error, info};
-use std::fs::read_to_string;
-use tempfile::Builder;
 use url::Url;
 
 use crate::repodata::{
-    container_info_download::ContainerInfoDownload, lxc_container::FilterBy,
-    lxc_container::LXCContainers,
+    container_info_download::LXCContainerMetadataCollection, lxc_container_metadata::FilterBy,
 };
 
 mod config;
@@ -25,26 +21,22 @@ impl CmdDownloadContainers {
     fn run(config: config::Config) -> Result<()> {
         info!("Download containers started.");
 
-        let RepoData {
-            target_url: TargetUrl { origin, index_uri },
-            container_filters,
-            ..
-        } = config.repodata;
-        let url = Url::parse(&origin)?.join(&index_uri)?;
-        let tempfile_name = url.as_str().split("/").last().unwrap_or("tempfile");
-        let tempdir = Builder::new().prefix(".repodata_").tempdir()?;
-        let tempfile = tempdir.path().join(tempfile_name).into_os_string();
-        let tempfile_path = ContainerInfoDownload::new(url).download_to(tempfile)?;
-        let tempfile_as_string = read_to_string(tempfile_path)?;
+        let url = Url::parse(&config.repodata.target_url.origin)?
+            .join(&config.repodata.target_url.index_uri)?;
 
-        info!("Create LXC containers data started.");
-        let lxc_containers =
-            LXCContainers::build_collection(tempfile_as_string)?.filter_by(container_filters)?;
+        info!("Download LXC container metadata from {} started.", &url);
 
-        info!("Create LXC containers data done.");
+        let lxc_container_metadata_collection = LXCContainerMetadataCollection::of(url.clone())
+            .get()?
+            .filter_by(config.repodata.container_filters)?;
 
-        println!("{:#?}", lxc_containers);
-        println!("Number of containers is {}", lxc_containers.len());
+        info!("Download LXC container metadata from {} done.", &url);
+
+        println!("{:#?}", lxc_container_metadata_collection);
+        println!(
+            "Number of containers is {}",
+            lxc_container_metadata_collection.len()
+        );
 
         info!("Download containers done.");
 
