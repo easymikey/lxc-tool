@@ -77,14 +77,9 @@ impl FilterBy for Vec<LXCContainerMetadata> {
                 container_filter
                     .iter()
                     .filter_map(|search_container| {
-                        let mut is_match = true;
-
-                        for (key, value) in search_container.clone() {
-                            if value != lxc_container_metadata.get(&key).unwrap_or_default() {
-                                is_match = false;
-                                break;
-                            }
-                        }
+                        let is_match = search_container.clone().into_iter().all(|(key, value)| {
+                            value == lxc_container_metadata.get(&key).unwrap_or_default()
+                        });
 
                         if is_match {
                             Some(LXCContainerMetadata {

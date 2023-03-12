@@ -12,9 +12,11 @@ impl LXCContainerMetadataCollection {
         Self { url }
     }
 
-    pub fn get(self) -> Result<Vec<LXCContainerMetadata>> {
-        Ok(reqwest::blocking::get(self.url)?
-            .text()?
+    pub async fn get(self) -> Result<Vec<LXCContainerMetadata>> {
+        Ok(reqwest::get(self.url)
+            .await?
+            .text()
+            .await?
             .lines()
             .filter_map(|line| Some(LXCContainerMetadata::of_metadata(line)))
             .collect::<Result<Vec<_>>>()?)
