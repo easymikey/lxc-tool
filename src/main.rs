@@ -1,11 +1,13 @@
-use anyhow::{Context, Result};
+use std::{fs, path::Path};
+use anyhow::{anyhow, Context, Result};
 use clap::{Args, Parser, Subcommand};
 use slog::{o, Drain};
 use slog_scope::{error, info};
 use url::Url;
 
 use crate::repodata::{
-    container_info_download::LXCContainerMetadataCollection, lxc_container_metadata::FilterBy,
+    container_info_download::LXCContainerMetadataCollection,
+    lxc_container_download::LXCContainerDownload, lxc_container_metadata::FilterBy,
 };
 
 mod config;
@@ -18,7 +20,7 @@ const CONFIG_DEFAULT_PATH: &str = "/etc/lxc-tool.yaml";
 struct CmdDownloadContainers;
 
 impl CmdDownloadContainers {
-    fn run(config: config::Config) -> Result<()> {
+    async fn run(config: config::Config) -> Result<()> {
         info!("Download containers started.");
 
         let url = Url::parse(&config.repodata.target_url.origin)?
@@ -27,16 +29,39 @@ impl CmdDownloadContainers {
         info!("Download LXC container metadata from {} started.", &url);
 
         let lxc_container_metadata_collection = LXCContainerMetadataCollection::of(url.clone())
-            .get()?
+            .get()
+            .await?
             .filter_by(config.repodata.container_filters)?;
 
         info!("Download LXC container metadata from {} done.", &url);
 
-        println!("{:#?}", lxc_container_metadata_collection);
-        println!(
-            "Number of containers is {}",
-            lxc_container_metadata_collection.len()
-        );
+        for x in lxc_container_metadata_collection.into_iter().take(1) {
+            let dist_dir_path = Path::new(&config.repodata.host_root_dir)
+                .join("images")
+                .join(x.dist.unwrap_or_default())
+                .join(x.release.unwrap_or_default())
+                .join(x.arch.unwrap_or_default())
+                .join(x.type_.unwrap_or_default())
+                .join(x.name.unwrap_or_default());
+            fs::create_dir_all(&dist_dir_path)?;
+
+            let d = x.path.unwrap_or_default().to_string();
+
+            for f in &config.repodata.download_files {
+                let download_url = Url::parse(&config.repodata.target_url.origin)?
+                    .join(&d)?
+                    .join(f)?;
+
+                let r = &dist_dir_path
+                    .join(f)
+                    .as_os_str()
+                    .to_str()
+                    .ok_or_else(|| anyhow!("Failed to get content length from '{}'", 12))?
+                    .to_owned();
+
+                LXCContainerDownload::of(download_url).download(r).await?;
+            }
+        }
 
         info!("Download containers done.");
 
@@ -87,7 +112,7 @@ impl Application {
         }
     }
 
-    fn run_command(&self, config: config::Config) -> Result<()> {
+    async fn run_command(&self, config: config::Config) -> Result<()> {
         match &self.command {
             CommandLine::DumpConfig => {
                 let config =
@@ -95,19 +120,20 @@ impl Application {
                 println!("{}", config);
                 Ok(())
             }
-            CommandLine::DownloadContainers => CmdDownloadContainers::run(config),
+            CommandLine::DownloadContainers => Ok(CmdDownloadContainers::run(config).await?),
         }
     }
 
-    pub fn run(&self) {
+    pub async fn run(&self) {
         let config = config::Config::read(&self.config_path).expect("Config");
         let _logger_guard = self.init_logger(&config).expect("Logger");
 
-        if let Err(err) = self.run_command(config) {
+        if let Err(err) = self.run_command(config).await {
             error!("Failed with error: {:#}", err);
         }
     }
 }
-fn main() {
-    Application::parse().run();
+#[tokio::main]
+async fn main() {
+    Application::parse().run().await;
 }
