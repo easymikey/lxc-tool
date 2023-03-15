@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::config::ContainerFilter;
@@ -41,8 +41,7 @@ impl LXCContainerMetadata {
                 }),
                 post_process: None,
             }),
-            // TODO: create error module
-            _ => Err(anyhow!("Do not grab container info")),
+            _ => bail!("Do not grab LXC container info"),
         }
     }
 }
@@ -97,8 +96,7 @@ impl FilterBy for Vec<LXCContainerMetadata> {
         if filtered_containers.len() != 0 {
             Ok(filtered_containers)
         } else {
-            // TODO: create error module
-            Err(anyhow!("Do not grab container info"))
+            bail!("Do not LXC grab container info")
         }
     }
 }
