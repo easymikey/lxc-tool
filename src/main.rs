@@ -176,7 +176,7 @@ impl Application {
                 println!("{}", config);
                 Ok(())
             }
-            CommandLine::DownloadContainers => Ok(CmdDownloadContainers::run(config).await?),
+            CommandLine::DownloadContainers => CmdDownloadContainers::run(config).await,
         }
     }
 
