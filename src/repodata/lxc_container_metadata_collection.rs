@@ -8,8 +8,8 @@ pub struct LXCContainerMetadataCollection {
 }
 
 impl LXCContainerMetadataCollection {
-    pub fn of(url: Url) -> Self {
-        Self { url }
+    pub fn of(url: &Url) -> Self {
+        Self { url: url.clone() }
     }
 
     pub async fn get(self) -> Result<Vec<LXCContainerMetadata>> {
