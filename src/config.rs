@@ -89,16 +89,18 @@ impl Iterator for ContainerFilterIntoIterator {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostScript {
-    pub path: String,
+    pub path: Option<String>,
     pub timeout: Timeout,
 }
 
+pub type DownloadFiles = Vec<String>;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RepoData {
+pub struct Repodata {
     pub host_root_dir: String,
     pub target_url: TargetUrl,
     pub container_filters: Vec<ContainerFilter>,
-    pub download_files: Vec<String>,
+    pub download_files: DownloadFiles,
     pub number_of_container_to_backup: i16,
     pub post_script: PostScript,
 }
@@ -106,7 +108,7 @@ pub struct RepoData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub log_level: LogLevel,
-    pub repodata: RepoData,
+    pub repodata: Repodata,
 }
 
 impl Config {
