@@ -1,19 +1,18 @@
+mod config;
+mod repodata;
+
+use crate::repodata::{
+    lxc_image_download::download_image, lxc_image_metadata::FilterBy,
+    lxc_image_metadata_collection::LXCImageMetadataCollection, lxc_image_patch::patch_image,
+};
+
 use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use slog::{o, Drain};
 use slog_scope::{error, info};
-use std::{fs, os::unix::prelude::PermissionsExt, path::Path};
+use std::{fs, os::unix::prelude::PermissionsExt};
 use tempfile::Builder;
 use url::Url;
-
-use crate::repodata::{
-    lxc_container_downloader::LXCContainerDownloader, lxc_container_metadata::FilterBy,
-    lxc_container_metadata_collection::LXCContainerMetadataCollection,
-    lxc_container_patcher::LCXContainerPatcher,
-};
-
-mod config;
-mod repodata;
 
 const CONFIG_DEFAULT_PATH: &str = "/etc/lxc-tool.yaml";
 
@@ -23,103 +22,62 @@ struct CmdDownloadContainers;
 
 impl CmdDownloadContainers {
     async fn run(config: config::Config) -> Result<()> {
-        info!("Download LXC containers started.");
+        info!("Download LXC images started.");
 
         let target_url_origin = Url::parse(&config.repodata.target_url.origin)?;
         let meta_data_url = target_url_origin.join(&config.repodata.target_url.index_uri)?;
 
-        info!(
-            "Download LXC container metadata from '{}' started.",
-            &meta_data_url
-        );
-
-        let lxc_container_metadata_collection = LXCContainerMetadataCollection::of(&meta_data_url)
+        let lxc_image_metadata_collection = LXCImageMetadataCollection::of(&meta_data_url)
             .get()
             .await?
-            .filter_by(config.repodata.container_filters)?;
+            .filter_by(config.repodata.image_filters)?;
 
-        info!(
-            "Download LXC container metadata from '{}' done.",
-            &meta_data_url
-        );
-
-        for lxc_container_metadata in lxc_container_metadata_collection {
+        for (lxc_container_metadata, post_process) in lxc_image_metadata_collection {
             let out_tempdir_path = Builder::new().prefix(".repodata_").tempdir()?;
-            let path = lxc_container_metadata.path.unwrap_or_default();
-            let path = if path.starts_with("/") {
-                &path[1..path.len() - 1]
-            } else {
-                &path
-            };
-            let out_dir_path = Path::new(&config.repodata.host_root_dir.to_owned()).join(&path);
+            let path = lxc_container_metadata.path.trim_start_matches("/");
+            let out_dir_path = &config.repodata.host_root_dir.join(&path);
 
             if out_dir_path.exists() {
-                info!("LCX container directory exists. Resuming.");
                 continue;
             }
 
-            info!("LCX container director doesn't exists. Skipping.");
-
             fs::create_dir_all(&out_dir_path)?;
 
-            for filename in &config.repodata.download_files {
-                let download_url = target_url_origin.join(&path)?.join(&filename)?;
-                let tempfile = &out_tempdir_path.path().join(&filename);
+            for image_file in &config.repodata.image_files {
+                let download_url = target_url_origin.join(&path)?.join(&image_file)?;
+                let tempfile = download_image(download_url).await?;
 
-                LXCContainerDownloader::of(download_url)
-                    .download(&tempfile)
-                    .await?;
+                let is_filename_rootfs = image_file == "rootfs.tar.xz";
 
-                let is_filename_rootfs = filename == "rootfs.tar.xz";
-
-                if lxc_container_metadata.post_process.is_some() && is_filename_rootfs {
-                    info!("Post process start execution. ");
-
-                    if LCXContainerPatcher::of(
-                        &lxc_container_metadata.post_process,
-                        tempfile,
-                        config.repodata.post_script.timeout,
-                    )
-                    .patch([
-                        &lxc_container_metadata.dist,
-                        &lxc_container_metadata.release,
-                        &lxc_container_metadata.arch,
-                    ])? != Some(0)
-                    {
-                        info!("Post process failed to execution.");
+                if is_filename_rootfs {
+                    if let Some(post_process) = &post_process {
+                        patch_image(
+                            post_process,
+                            &tempfile,
+                            config.repodata.patcher_timeout,
+                            &lxc_container_metadata,
+                        )?;
                     }
 
-                    info!("Post process executed.");
-                }
-
-                if config.repodata.post_script.path.is_some() && is_filename_rootfs {
-                    info!("Post process start execution.");
-
-                    if LCXContainerPatcher::of(
-                        &config.repodata.post_script.path,
-                        tempfile,
-                        config.repodata.post_script.timeout,
-                    )
-                    .patch([
-                        &lxc_container_metadata.dist,
-                        &lxc_container_metadata.release,
-                        &lxc_container_metadata.arch,
-                    ])? != Some(0)
-                    {
-                        info!("Post script failed to execution.");
+                    if let Some(post_script) = &config.repodata.post_script_path {
+                        patch_image(
+                            post_script,
+                            &tempfile,
+                            config.repodata.patcher_timeout,
+                            &lxc_container_metadata,
+                        )?;
                     }
-
-                    info!("Post script executed.");
                 }
 
-                tempfile.metadata()?.permissions().set_mode(0o644);
+                fs::rename(&tempfile, &out_tempdir_path.path().join(image_file))?;
+                tempfile.as_file().metadata()?.permissions().set_mode(0o644);
             }
 
             fs::rename(&out_tempdir_path, &out_dir_path)?;
             out_dir_path.metadata()?.permissions().set_mode(0o755);
         }
 
-        info!("Download LCX containers done.");
+        info!("Download LXС images done.");
 
         Ok(())
     }
