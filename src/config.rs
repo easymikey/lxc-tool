@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use url::Url;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum LogLevel {
@@ -29,7 +30,7 @@ pub type Timeout = u64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TargetUrl {
-    pub origin: String,
+    pub origin: Url,
     pub index_uri: String,
 }
 
@@ -102,8 +103,6 @@ pub struct Repodata {
     pub image_files: ImageFiles,
     // Numbers of containers to backup
     pub number_of_container_to_backup: i16,
-    // Path to the script that will run after the image is loaded
-    pub post_script_path: Option<PathBuf>,
     // Timeout to the post_script or post process (maybe in the image metadata) that will run after the image is loaded
     pub patcher_timeout: Timeout,
 }
