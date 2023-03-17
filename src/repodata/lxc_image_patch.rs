@@ -2,7 +2,7 @@ use crate::config::Timeout;
 
 use super::lxc_image_metadata::LXCImageMetadata;
 
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
 use slog_scope::info;
 use std::{path::PathBuf, process::Command, time::Duration};
 use tempfile::NamedTempFile;
@@ -16,40 +16,32 @@ pub fn patch_image(
 ) -> Result<()> {
     info!("Patcher execution started.");
 
-    let tempfile = match tempfile.path().to_str() {
-        Some(v) => v,
-        _ => {
-            info!(
-                "Patcher execution failed. Converting tempfile to string error. Tempfile: {:?}.",
-                tempfile
-            );
-            return Ok(());
-        }
-    };
+    let tempfile = tempfile.path().to_str().ok_or_else(|| {
+        anyhow!(
+            "Patcher execution failed. Converting tempfile to string error. Tempfile: {:?}.",
+            tempfile
+        )
+    })?;
 
     if !&path_to_script.exists() {
-        info!(
+        bail!(
             "Patcher execution failed. Path to script do not exists. Path: {:?}.",
             &path_to_script
         );
-
-        return Ok(());
     }
 
-    let mut child = match Command::new(&path_to_script)
+    let mut child = Command::new(&path_to_script)
         .args(["-path", tempfile])
         .args(["-d", &metadata.dist])
         .args(["-r", &metadata.release])
         .args(["-a", &metadata.arch])
         .spawn()
-    {
-        Ok(v) => v,
-        _ => {
-            info!("Patcher execution failed. Failed to create child process.");
-
-            return Ok(());
-        }
-    };
+        .map_err(|err| {
+            anyhow!(
+                "Patcher execution failed. Failed to create child process. Error: {:?}",
+                err
+            )
+        })?;
 
     let timeout_sec = Duration::from_secs(timeout);
     let is_status_success = match child.wait_timeout(timeout_sec) {
