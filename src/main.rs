@@ -2,14 +2,12 @@ mod config;
 mod repodata;
 
 use anyhow::{Context, Result};
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use slog::{o, Drain};
 use slog_scope::{error, info};
 
 const CONFIG_DEFAULT_PATH: &str = "/etc/lxc-tool.yaml";
 
-/// Download
-#[derive(Args)]
 struct CmdDownloadImages;
 
 impl CmdDownloadImages {
@@ -28,7 +26,7 @@ impl CmdDownloadImages {
 enum CommandLine {
     /// Dump parsed config file. Helps to find typos
     DumpConfig,
-    /// Download LXC containers
+    /// Download LXC images
     DownloadImages,
 }
 
