@@ -17,7 +17,7 @@ slog-envlogger = "2.2"
 slog-scope = "4.4"
 slog-syslog = {path = "custom-vendored/slog-syslog"}
 tempfile = "3.4.0"
-url = "2.3.1"
+url = { version = "2.3.1", features = ["serde"] }
 wait-timeout = "0.2.0"
 tokio = { version = "1.13.0", features = ["full"] }
 indicatif = "0.17.3"
