@@ -18,9 +18,9 @@ const CONFIG_DEFAULT_PATH: &str = "/etc/lxc-tool.yaml";
 
 /// Download
 #[derive(Args)]
-struct CmdDownloadContainers;
+struct CmdDownloadImages;
 
-impl CmdDownloadContainers {
+impl CmdDownloadImages {
     async fn run(config: config::Config) -> Result<()> {
         info!("Download LXC images started.");
 
@@ -88,7 +88,7 @@ enum CommandLine {
     /// Dump parsed config file. Helps to find typos
     DumpConfig,
     /// Download LXC containers
-    DownloadContainers,
+    DownloadImages,
 }
 
 #[derive(Parser)]
@@ -134,7 +134,7 @@ impl Application {
                 println!("{}", config);
                 Ok(())
             }
-            CommandLine::DownloadContainers => CmdDownloadContainers::run(config).await,
+            CommandLine::DownloadImages => CmdDownloadImages::run(config).await,
         }
     }
 
