@@ -1,22 +1,15 @@
 use crate::config::ImageFilter;
 
 use anyhow::{bail, Result};
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct LXCImageMetadata {
-    #[serde(default)]
     pub dist: String,
-    #[serde(default)]
     pub release: String,
-    #[serde(default)]
     pub arch: String,
-    #[serde(rename = "type", default)]
     pub type_: String,
-    #[serde(default)]
     pub name: String,
-    #[serde(default)]
     pub path: String,
 }
 
@@ -31,12 +24,13 @@ impl LXCImageMetadata {
                 name: name.trim().to_string(),
                 path: {
                     let path = path.trim().to_string();
-
-                    if path.ends_with("/") {
+                    let path = if path.ends_with("/") {
                         path
                     } else {
                         path + "/"
-                    }
+                    };
+
+                    path.trim_start_matches("/").to_string()
                 },
             }),
             _ => bail!("Do not grab LXC container info"),
