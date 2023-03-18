@@ -9,9 +9,12 @@ use url::Url;
 
 pub async fn download_image(url: Url) -> Result<NamedTempFile> {
     let response = reqwest::get(url.as_str()).await?;
-    let total_size = response
-        .content_length()
-        .ok_or_else(|| anyhow!("Failed to get content length from {}", &url))?;
+    let total_size = response.content_length().ok_or_else(|| {
+        anyhow!(
+            "Download LXC image failed. Content length error. Url: '{}'",
+            &url
+        )
+    })?;
     let progress_bar = ProgressBar::new(total_size);
     progress_bar.set_style(ProgressStyle::default_bar()
 			.template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/green}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")?

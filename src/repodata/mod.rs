@@ -10,7 +10,7 @@ use self::{
 
 use crate::config;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::{fs, os::unix::prelude::PermissionsExt};
 use tempfile::Builder;
 
@@ -26,12 +26,9 @@ pub async fn download_images(config: config::Config) -> Result<()> {
         .await?
         .filter_by(config.repodata.image_filters)?;
 
-    for (lxc_container_metadata, post_process) in lxc_image_metadata_collection {
+    for (lxc_image_metadata, post_process) in lxc_image_metadata_collection {
         let out_tempdir_path = Builder::new().prefix(".repodata_").tempdir()?;
-        let out_dir_path = &config
-            .repodata
-            .host_root_dir
-            .join(&lxc_container_metadata.path);
+        let out_dir_path = &config.repodata.host_root_dir.join(&lxc_image_metadata.path);
 
         if out_dir_path.exists() {
             continue;
@@ -44,7 +41,12 @@ pub async fn download_images(config: config::Config) -> Result<()> {
                 .repodata
                 .target_url
                 .origin
-                .join(&lxc_container_metadata.path)?
+                .join(&lxc_image_metadata.path.to_str().ok_or_else(|| {
+                    anyhow!(
+                        "Download LXC image failed. Convert path to string error. Path: {:?}",
+                        lxc_image_metadata.path
+                    )
+                })?)?
                 .join(&image_file)?;
             let tempfile = download_image(download_url).await?;
 
@@ -54,7 +56,7 @@ pub async fn download_images(config: config::Config) -> Result<()> {
                         post_process,
                         &tempfile,
                         config.repodata.patcher_timeout,
-                        &lxc_container_metadata,
+                        &lxc_image_metadata,
                     )?;
                 }
             }

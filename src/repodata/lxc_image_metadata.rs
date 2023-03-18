@@ -10,7 +10,7 @@ pub struct LXCImageMetadata {
     pub arch: String,
     pub type_: String,
     pub name: String,
-    pub path: String,
+    pub path: PathBuf,
 }
 
 impl LXCImageMetadata {
@@ -22,18 +22,15 @@ impl LXCImageMetadata {
                 arch: arch.trim().to_string(),
                 type_: type_.trim().to_string(),
                 name: name.trim().to_string(),
-                path: {
-                    let path = path.trim().to_string();
-                    let path = if path.ends_with("/") {
-                        path
-                    } else {
-                        path + "/"
-                    };
-
-                    path.trim_start_matches("/").to_string()
-                },
+                path: PathBuf::from(
+                    path.trim()
+                        .trim_start_matches("/")
+                        .trim_end_matches("/")
+                        .to_string()
+                        + "/",
+                ),
             }),
-            _ => bail!("Do not grab LXC container info"),
+            _ => bail!("Create LXC image metadata. Receive data error."),
         }
     }
 }
@@ -88,7 +85,7 @@ impl FilterBy for Vec<LXCImageMetadata> {
         if filtered_containers.len() != 0 {
             Ok(filtered_containers)
         } else {
-            bail!("Do not LXC grab container info")
+            bail!("Filter LXC images failed. Filtere images error. Images is equal 0.")
         }
     }
 }

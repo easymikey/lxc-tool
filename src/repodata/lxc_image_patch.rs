@@ -14,18 +14,18 @@ pub fn patch_image(
     timeout: Timeout,
     metadata: &LXCImageMetadata,
 ) -> Result<()> {
-    info!("Patcher execution started.");
+    info!("Patch image started.");
 
     let tempfile = tempfile.path().to_str().ok_or_else(|| {
         anyhow!(
-            "Patcher execution failed. Converting tempfile to string error. Tempfile: {:?}.",
+            "Patch LXC image failed. Convert tempfile to string error. Tempfile: {:?}.",
             tempfile
         )
     })?;
 
     if !&path_to_script.exists() {
         bail!(
-            "Patcher execution failed. Path to script do not exists. Path: {:?}.",
+            "Patch LXC image failed. Path to script do not exists. Path: {:?}.",
             &path_to_script
         );
     }
@@ -38,25 +38,26 @@ pub fn patch_image(
         .spawn()
         .map_err(|err| {
             anyhow!(
-                "Patcher execution failed. Failed to create child process. Error: {:?}",
+                "Patch LXC image failed. Create child process error. Error: {:?}",
                 err
             )
         })?;
 
     let timeout_sec = Duration::from_secs(timeout);
-    let is_status_success = match child.wait_timeout(timeout_sec) {
-        Ok(Some(status)) => status.success(),
+
+    match child.wait_timeout(timeout_sec) {
+        Ok(Some(status)) => {
+            info!("Patch LXC image done.");
+            if !status.success() {
+                bail!("Patch LXC image completed with non-zero exit code.")
+            }
+        }
         _ => {
             child.kill()?;
-            child.wait()?.success()
+            child.wait()?;
+            bail!("Patch LXC image failed. Timeout error.")
         }
     };
-
-    if is_status_success {
-        info!("Patcher execution done.");
-    } else {
-        info!("Patcher execution failed. Timeout.")
-    }
 
     Ok(())
 }
