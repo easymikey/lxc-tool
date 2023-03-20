@@ -1,44 +1,22 @@
-use anyhow::{Context, Result};
-use clap::{Args, Parser, Subcommand};
-use slog::{o, Drain};
-use slog_scope::{error, info};
-use url::Url;
-
-use crate::repodata::{
-    container_info_download::LXCContainerMetadataCollection, lxc_container_metadata::FilterBy,
-};
-
 mod config;
 mod repodata;
 
+use anyhow::{Context, Result};
+use clap::{Parser, Subcommand};
+use slog::{o, Drain};
+use slog_scope::{error, info};
+
 const CONFIG_DEFAULT_PATH: &str = "/etc/lxc-tool.yaml";
 
-/// Download
-#[derive(Args)]
-struct CmdDownloadContainers;
+struct CmdDownloadImages;
 
-impl CmdDownloadContainers {
-    fn run(config: config::Config) -> Result<()> {
-        info!("Download containers started.");
+impl CmdDownloadImages {
+    async fn run(config: config::Config) -> Result<()> {
+        info!("Download LXC images started.");
 
-        let url = Url::parse(&config.repodata.target_url.origin)?
-            .join(&config.repodata.target_url.index_uri)?;
+        repodata::download_images(config).await?;
 
-        info!("Download LXC container metadata from {} started.", &url);
-
-        let lxc_container_metadata_collection = LXCContainerMetadataCollection::of(url.clone())
-            .get()?
-            .filter_by(config.repodata.container_filters)?;
-
-        info!("Download LXC container metadata from {} done.", &url);
-
-        println!("{:#?}", lxc_container_metadata_collection);
-        println!(
-            "Number of containers is {}",
-            lxc_container_metadata_collection.len()
-        );
-
-        info!("Download containers done.");
+        info!("Download LXС images done.");
 
         Ok(())
     }
@@ -48,8 +26,8 @@ impl CmdDownloadContainers {
 enum CommandLine {
     /// Dump parsed config file. Helps to find typos
     DumpConfig,
-    /// Download LXC containers
-    DownloadContainers,
+    /// Download LXC images
+    DownloadImages,
 }
 
 #[derive(Parser)]
@@ -87,7 +65,7 @@ impl Application {
         }
     }
 
-    fn run_command(&self, config: config::Config) -> Result<()> {
+    async fn run_command(&self, config: config::Config) -> Result<()> {
         match &self.command {
             CommandLine::DumpConfig => {
                 let config =
@@ -95,19 +73,20 @@ impl Application {
                 println!("{}", config);
                 Ok(())
             }
-            CommandLine::DownloadContainers => CmdDownloadContainers::run(config),
+            CommandLine::DownloadImages => CmdDownloadImages::run(config).await,
         }
     }
 
-    pub fn run(&self) {
+    pub async fn run(&self) {
         let config = config::Config::read(&self.config_path).expect("Config");
         let _logger_guard = self.init_logger(&config).expect("Logger");
 
-        if let Err(err) = self.run_command(config) {
+        if let Err(err) = self.run_command(config).await {
             error!("Failed with error: {:#}", err);
         }
     }
 }
-fn main() {
-    Application::parse().run();
+#[tokio::main]
+async fn main() {
+    Application::parse().run().await;
 }

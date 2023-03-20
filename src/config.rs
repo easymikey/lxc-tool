@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use url::Url;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum LogLevel {
@@ -28,12 +30,12 @@ pub type Timeout = u64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TargetUrl {
-    pub origin: String,
+    pub origin: Url,
     pub index_uri: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContainerFilter {
+pub struct ImageFilter {
     #[serde(default)]
     pub dist: Option<String>,
     #[serde(default)]
@@ -43,38 +45,38 @@ pub struct ContainerFilter {
     #[serde(rename = "type", default)]
     pub type_: Option<String>,
     #[serde(default)]
-    pub post_process: Option<String>,
+    pub post_process: Option<PathBuf>,
 }
 
-impl IntoIterator for ContainerFilter {
+impl IntoIterator for ImageFilter {
     type Item = (String, String);
-    type IntoIter = ContainerFilterIntoIterator;
+    type IntoIter = ImageFilterIntoIterator;
 
     fn into_iter(self) -> Self::IntoIter {
-        ContainerFilterIntoIterator {
-            container_filter: self,
+        ImageFilterIntoIterator {
+            image_filter: self,
             index: 0,
         }
     }
 }
 
-pub struct ContainerFilterIntoIterator {
-    container_filter: ContainerFilter,
+pub struct ImageFilterIntoIterator {
+    image_filter: ImageFilter,
     index: usize,
 }
 
-impl Iterator for ContainerFilterIntoIterator {
+impl Iterator for ImageFilterIntoIterator {
     type Item = (String, String);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let container_filter_slice = [
-            ("dist", &self.container_filter.dist),
-            ("release", &self.container_filter.release),
-            ("arch", &self.container_filter.arch),
-            ("type", &self.container_filter.type_),
+        let image_filter_slice = [
+            ("dist", &self.image_filter.dist),
+            ("release", &self.image_filter.release),
+            ("arch", &self.image_filter.arch),
+            ("type", &self.image_filter.type_),
         ];
 
-        let result = match container_filter_slice.get(self.index) {
+        let result = match image_filter_slice.get(self.index) {
             Some((key, value)) => match value {
                 Some(value) => (key.to_string(), value.to_string()),
                 None => return None,
@@ -87,26 +89,28 @@ impl Iterator for ContainerFilterIntoIterator {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PostScript {
-    pub path: String,
-    pub timeout: Timeout,
-}
+pub type ImageFiles = Vec<String>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RepoData {
-    pub host_root_dir: String,
+pub struct Repodata {
+    // Directory where the images will be saved
+    pub host_root_dir: PathBuf,
+    // Url from which information about images will be received
     pub target_url: TargetUrl,
-    pub container_filters: Vec<ContainerFilter>,
-    pub download_files: Vec<String>,
+    // Filters based on which images will be selected
+    pub image_filters: Vec<ImageFilter>,
+    // Image files to be desired in host_root_dir
+    pub image_files: ImageFiles,
+    // Numbers of containers to backup
     pub number_of_container_to_backup: i16,
-    pub post_script: PostScript,
+    // Timeout to the post_script or post process (maybe in the image metadata) that will run after the image is loaded
+    pub patcher_timeout: Timeout,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub log_level: LogLevel,
-    pub repodata: RepoData,
+    pub repodata: Repodata,
 }
 
 impl Config {
