@@ -1,14 +1,17 @@
 mod lxc_image_download;
+mod lxc_image_entries_cleanup;
 mod lxc_image_metadata;
 mod lxc_image_metadata_collection;
+mod lxc_image_metadata_entries_create;
 mod lxc_image_patch;
 
-use self::{
-    lxc_image_download::download_image, lxc_image_metadata::FilterBy,
-    lxc_image_metadata_collection::LXCImageMetadataCollection, lxc_image_patch::patch_image,
+use crate::{
+    config, repodata::lxc_image_download::download_image,
+    repodata::lxc_image_entries_cleanup::cleanup_entries, repodata::lxc_image_metadata::FilterBy,
+    repodata::lxc_image_metadata_collection::LXCImageMetadataCollection,
+    repodata::lxc_image_metadata_entries_create::create_entries,
+    repodata::lxc_image_patch::patch_image,
 };
-
-use crate::config;
 
 use anyhow::{anyhow, Result};
 use std::{fs, os::unix::prelude::PermissionsExt};
@@ -68,6 +71,11 @@ pub async fn download_images(config: config::Config) -> Result<()> {
         fs::rename(&out_tempdir_path, &out_dir_path)?;
         out_dir_path.metadata()?.permissions().set_mode(0o755);
     }
+
+    cleanup_entries(
+        create_entries(&config.repodata.host_root_dir)?,
+        config.repodata.number_of_container_to_backup,
+    )?;
 
     Ok(())
 }
