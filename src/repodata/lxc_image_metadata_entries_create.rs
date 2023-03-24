@@ -1,25 +1,28 @@
 use super::lxc_image_metadata::LXCImageMetadata;
 
-use anyhow::{bail, Result};
-use regex::Regex;
+use anyhow::Result;
 use std::{
     path::PathBuf,
     time::{Duration, SystemTime},
 };
 use walkdir::WalkDir;
 
-pub fn create_entries(root_dir: &PathBuf) -> Result<Vec<(LXCImageMetadata, Duration)>> {
-    let re = Regex::new(
-        r"/images/(?P<dist>.+)/(?P<release>.+)/(?P<arch>.+)/(?P<type>.+)/(?P<name>\d\d\d\d\d\d\d\d_\d\d:\d\d)",
-    )?;
-    let entry: Vec<_> = WalkDir::new(root_dir)
+pub fn create_image_metadata_entries(
+    root_dir: &PathBuf,
+) -> Result<Vec<(LXCImageMetadata, Duration)>> {
+    let image_entries: Vec<_> = WalkDir::new(root_dir)
+        .min_depth(5)
+        .max_depth(5)
         .into_iter()
-        .filter_map(|e| e.ok())
-        .filter_map(|e| {
-            let path = e.path().to_path_buf();
-            let path_as_str = path.to_str()?;
-            let caps = re.captures(path_as_str)?;
-            let mtime = e
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+
+            if !path.is_dir() {
+                return None;
+            }
+
+            let mtime = entry
                 .metadata()
                 .ok()?
                 .modified()
@@ -27,23 +30,28 @@ pub fn create_entries(root_dir: &PathBuf) -> Result<Vec<(LXCImageMetadata, Durat
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .ok()?;
 
-            Some((
-                LXCImageMetadata {
-                    dist: caps["dist"].to_string(),
-                    release: caps["release"].to_string(),
-                    arch: caps["arch"].to_string(),
-                    type_: caps["type"].to_string(),
-                    name: caps["name"].to_string(),
-                    path,
-                },
-                mtime,
-            ))
+            let entry_metadata = match path
+                .components()
+                .filter_map(|c| c.as_os_str().to_str())
+                .collect::<Vec<_>>()
+                .as_slice()
+            {
+                &[.., dist, release, arch, type_, name] => Some((
+                    LXCImageMetadata {
+                        dist: dist.to_string(),
+                        release: release.to_string(),
+                        arch: arch.to_string(),
+                        type_: type_.to_string(),
+                        name: name.to_string(),
+                        path: path.to_path_buf(),
+                    },
+                    mtime,
+                )),
+                _ => None,
+            }?;
+            Some(entry_metadata)
         })
         .collect();
 
-    if entry.len() != 0 {
-        Ok(entry)
-    } else {
-        bail!("Get LXC images from FS failed. Get images from FS error. Images is equal 0.")
-    }
+    Ok(image_entries)
 }

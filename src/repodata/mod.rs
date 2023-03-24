@@ -3,14 +3,16 @@ mod lxc_image_entries_cleanup;
 mod lxc_image_metadata;
 mod lxc_image_metadata_collection;
 mod lxc_image_metadata_entries_create;
+mod lxc_image_metadata_save;
 mod lxc_image_patch;
 
 use crate::{
     config, repodata::lxc_image_download::download_image,
-    repodata::lxc_image_entries_cleanup::cleanup_entries, repodata::lxc_image_metadata::FilterBy,
+    repodata::lxc_image_entries_cleanup::cleanup_image_entries,
+    repodata::lxc_image_metadata::FilterBy,
     repodata::lxc_image_metadata_collection::LXCImageMetadataCollection,
-    repodata::lxc_image_metadata_entries_create::create_entries,
-    repodata::lxc_image_patch::patch_image,
+    repodata::lxc_image_metadata_entries_create::create_image_metadata_entries,
+    repodata::lxc_image_metadata_save::save_image_metadata, repodata::lxc_image_patch::patch_image,
 };
 
 use anyhow::{anyhow, Result};
@@ -30,14 +32,14 @@ pub async fn download_images(config: config::Config) -> Result<()> {
         .filter_by(config.repodata.image_filters)?;
 
     for (lxc_image_metadata, post_process) in lxc_image_metadata_collection {
-        let out_tempdir_path = Builder::new().prefix(".repodata_").tempdir()?;
-        let out_dir_path = &config.repodata.host_root_dir.join(&lxc_image_metadata.path);
+        let image_tempdir_path = Builder::new().prefix(".repodata_").tempdir()?;
+        let image_dir_path = &config.repodata.host_root_dir.join(&lxc_image_metadata.path);
 
-        if out_dir_path.exists() {
+        if image_dir_path.exists() {
             continue;
         }
 
-        fs::create_dir_all(&out_dir_path)?;
+        fs::create_dir_all(&image_dir_path)?;
 
         for image_file in &config.repodata.image_files {
             let download_url = config
@@ -64,17 +66,25 @@ pub async fn download_images(config: config::Config) -> Result<()> {
                 }
             }
 
-            fs::rename(&tempfile, &out_tempdir_path.path().join(image_file))?;
+            fs::rename(&tempfile, &image_tempdir_path.path().join(image_file))?;
             tempfile.as_file().metadata()?.permissions().set_mode(0o644);
         }
 
-        fs::rename(&out_tempdir_path, &out_dir_path)?;
-        out_dir_path.metadata()?.permissions().set_mode(0o755);
+        fs::rename(&image_tempdir_path, &image_dir_path)?;
+        image_dir_path.metadata()?.permissions().set_mode(0o755);
     }
 
-    cleanup_entries(
-        create_entries(&config.repodata.host_root_dir)?,
+    cleanup_image_entries(
+        &config.repodata.host_root_dir,
         config.repodata.number_of_container_to_backup,
+        create_image_metadata_entries(&config.repodata.host_root_dir)?,
+    )?;
+
+    save_image_metadata(
+        &config.repodata.host_root_dir,
+        config.repodata.target_url.index_uri,
+        config.repodata.username,
+        create_image_metadata_entries(&config.repodata.host_root_dir)?,
     )?;
 
     Ok(())

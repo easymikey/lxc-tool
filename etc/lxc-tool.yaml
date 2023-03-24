@@ -1,0 +1,34 @@
+log_level: Info
+
+repodata:
+  host_root_dir: /path/to/some/dir
+
+  username: username
+
+  target_url:
+    origin: https://images.example.com
+    index_uri: meta/1.0/index-system
+
+  image_filters:
+    - dist: centos
+      release: "6"
+      arch: amd64
+      type: default
+      post_process: /usr/bin/image_patcher.py
+    - dist: centos
+      release: "7"
+      arch: amd64
+      type: default
+    - dist: centos
+      release: "8"
+      arch: amd64
+      type: default
+      post_process: /root/test2.sh
+
+  image_files:
+    - meta.tar.xz
+    - rootfs.tar.xz
+
+  number_of_container_to_backup: 30
+
+  patcher_timeout: 600

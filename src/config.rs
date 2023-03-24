@@ -95,6 +95,8 @@ pub type ImageFiles = Vec<String>;
 pub struct Repodata {
     // Directory where the images will be saved
     pub host_root_dir: PathBuf,
+    // User who will own list of images metadata
+    pub username: String,
     // Url from which information about images will be received
     pub target_url: TargetUrl,
     // Filters based on which images will be selected
