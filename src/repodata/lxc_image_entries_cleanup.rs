@@ -10,7 +10,7 @@ pub fn cleanup_entries(
 ) -> Result<()> {
     info!("Cleanup LXC images started.");
 
-    let hmap: HashMap<&str, Vec<(LXCImageMetadata, Duration)>> =
+    let hashed_entries: HashMap<&str, Vec<(LXCImageMetadata, Duration)>> =
         entry
             .iter()
             .fold(HashMap::new(), |mut acc, (image_meta, mtime)| {
@@ -31,7 +31,7 @@ pub fn cleanup_entries(
                 acc
             });
 
-    for mut image in hmap.into_values() {
+    for mut image in hashed_entries.into_values() {
         image.sort_by(|a, b| a.1.cmp(&b.1));
 
         while image.len() > number_of_container_to_backup as usize {
