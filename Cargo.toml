@@ -21,4 +21,7 @@ url = { version = "2.3.1", features = ["serde"] }
 wait-timeout = "0.2.0"
 tokio = { version = "1.13.0", features = ["full"] }
 indicatif = "0.17.3"
+walkdir = "2.3.3"
+pwd = "1.4.0"
+nix = "0.26.2"
 

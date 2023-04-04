@@ -14,7 +14,7 @@ pub fn patch_image(
     timeout: Timeout,
     metadata: &LXCImageMetadata,
 ) -> Result<()> {
-    info!("Patch image started.");
+    info!("Patch LXC image started.");
 
     let tempfile = tempfile.path().to_str().ok_or_else(|| {
         anyhow!(

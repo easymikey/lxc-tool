@@ -85,7 +85,7 @@ impl FilterBy for Vec<LXCImageMetadata> {
         if filtered_containers.len() != 0 {
             Ok(filtered_containers)
         } else {
-            bail!("Filter LXC images failed. Filtere images error. Images is equal 0.")
+            bail!("Filter LXC images failed. Filter images error. Images is equal 0.")
         }
     }
 }
