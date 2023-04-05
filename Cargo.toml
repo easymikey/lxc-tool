@@ -4,6 +4,10 @@ edition = "2021"
 name = "lxc-tool"
 version = "0.1.0"
 
+[profile.release]
+lto = true
+strip = true
+
 [dependencies]
 anyhow = "1.0"
 clap = {version = "4.0", features = ["derive"]}
