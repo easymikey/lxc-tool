@@ -58,7 +58,7 @@ impl Application {
     }
 
     fn init_logger(&self, config: &config::Config) -> Result<slog_scope::GlobalLoggerGuard> {
-        if std::env::var("RUST_LOGRU").is_ok() {
+        if std::env::var("RUST_LOG").is_ok() {
             Self::init_env_logger()
         } else {
             Self::init_syslog_logger(config.log_level.into())
