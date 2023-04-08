@@ -1,6 +1,6 @@
 ## About
 
-lxc-tool is tool to download with LXC images files.
+lxc-tool is tool to download LXC images files.
 
 ## Build
 
@@ -28,6 +28,6 @@ lxc-tool download-images
 The tool can write a log to STDOUT instead of syslog. Just define the environment variable RUST_LOG with the desired log level:
 
 ```bash
-RUST_LOG=info lxc-tool download-images ...
+RUST_LOG=info lxc-tool download-images
 ```
 
