@@ -21,7 +21,7 @@ impl LXCImageMetadataCollection {
             .text()
             .await?
             .lines()
-            .filter_map(|line| Some(LXCImageMetadata::of_metadata(line)))
+            .map(LXCImageMetadata::of_metadata)
             .collect::<Result<Vec<_>>>()?;
 
         info!("Download LXC images metadata from '{}' done.", self.url);
