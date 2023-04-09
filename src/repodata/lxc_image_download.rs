@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
-use reqwest;
 use slog_scope::info;
 use std::{cmp::min, io::Write};
 use tempfile::{Builder, NamedTempFile};

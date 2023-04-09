@@ -39,20 +39,21 @@ pub async fn download_images(config: config::Config) -> Result<()> {
             continue;
         }
 
-        fs::create_dir_all(&image_dir_path)?;
+        fs::create_dir_all(image_dir_path)?;
 
         for image_file in &config.repodata.image_files {
+            let image_path = lxc_image_metadata.path.to_str().ok_or_else(|| {
+                anyhow!(
+                    "Download LXC image failed. Convert path to string error. Path: {:?}",
+                    lxc_image_metadata.path
+                )
+            })?;
             let download_url = config
                 .repodata
                 .target_url
                 .origin
-                .join(&lxc_image_metadata.path.to_str().ok_or_else(|| {
-                    anyhow!(
-                        "Download LXC image failed. Convert path to string error. Path: {:?}",
-                        lxc_image_metadata.path
-                    )
-                })?)?
-                .join(&image_file)?;
+                .join(image_path)?
+                .join(image_file)?;
             let tempfile = download_image(download_url).await?;
 
             if image_file == "rootfs.tar.xz" {
@@ -70,7 +71,7 @@ pub async fn download_images(config: config::Config) -> Result<()> {
             tempfile.as_file().metadata()?.permissions().set_mode(0o644);
         }
 
-        fs::rename(&image_tempdir_path, &image_dir_path)?;
+        fs::rename(&image_tempdir_path, image_dir_path)?;
         image_dir_path.metadata()?.permissions().set_mode(0o755);
     }
 

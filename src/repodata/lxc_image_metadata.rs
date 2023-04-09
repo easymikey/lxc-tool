@@ -60,7 +60,7 @@ impl FilterBy for Vec<LXCImageMetadata> {
         image_filters: Vec<ImageFilter>,
     ) -> Result<Vec<(LXCImageMetadata, Option<PathBuf>)>> {
         let filtered_containers: Vec<_> = self
-            .into_iter()
+            .iter()
             .flat_map(|lxc_container_metadata| {
                 image_filters
                     .iter()
@@ -82,7 +82,7 @@ impl FilterBy for Vec<LXCImageMetadata> {
             })
             .collect();
 
-        if filtered_containers.len() != 0 {
+        if !filtered_containers.is_empty() {
             Ok(filtered_containers)
         } else {
             bail!("Filter LXC images failed. Filter images error. Images is equal 0.")
