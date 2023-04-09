@@ -42,7 +42,7 @@ pub async fn download_images(config: config::Config) -> Result<()> {
         fs::create_dir_all(image_dir_path)?;
 
         for image_file in &config.repodata.image_files {
-            let image_path = lxc_image_metadata.path.to_str().ok_or_else(|| {
+            let image_dir = lxc_image_metadata.path.to_str().ok_or_else(|| {
                 anyhow!(
                     "Download LXC image failed. Convert path to string error. Path: {:?}",
                     lxc_image_metadata.path
@@ -52,7 +52,7 @@ pub async fn download_images(config: config::Config) -> Result<()> {
                 .repodata
                 .target_url
                 .origin
-                .join(image_path)?
+                .join(image_dir)?
                 .join(image_file)?;
             let tempfile = download_image(download_url).await?;
 
