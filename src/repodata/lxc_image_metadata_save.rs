@@ -5,7 +5,7 @@ use nix::unistd;
 use pwd::Passwd;
 use slog_scope::info;
 use std::{
-    fs::{copy, File},
+    fs::{self, File},
     io::Write,
     path::PathBuf,
     time::Duration,
@@ -20,6 +20,13 @@ pub fn save_image_metadata(
     info!("Save LXC image metadata started.");
 
     let image_metadata_path = root_dir.join(&metadata_path);
+
+    if let Some(parent_dir_path) = &image_metadata_path.parent() {
+        if !parent_dir_path.exists() {
+            fs::create_dir_all(parent_dir_path)?;
+        }
+    }
+
     let mut file = File::create(&image_metadata_path)?;
 
     image_entries.sort_by(|a, b| a.0.name.cmp(&b.0.name).reverse());
@@ -51,7 +58,7 @@ pub fn save_image_metadata(
 
     let copy_image_metadata_path = image_metadata_path.with_extension("7");
 
-    copy(&image_metadata_path, &copy_image_metadata_path)?;
+    fs::copy(&image_metadata_path, &copy_image_metadata_path)?;
 
     match Passwd::from_name(&username)? {
         Some(passwd) => {
