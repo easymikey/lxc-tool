@@ -77,10 +77,7 @@ impl Iterator for ImageFilterIntoIterator {
         ];
 
         let result = match image_filter_slice.get(self.index) {
-            Some((key, value)) => match value {
-                Some(value) => (key.to_string(), value.to_string()),
-                None => return None,
-            },
+            Some((key, Some(value))) => (key.to_string(), value.to_string()),
             _ => return None,
         };
 
