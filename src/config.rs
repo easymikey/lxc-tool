@@ -69,14 +69,17 @@ impl Iterator for ImageFilterIntoIterator {
     type Item = (String, String);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let image_filter_slice = [
+        let image_filter_collection: Vec<_> = [
             ("dist", &self.image_filter.dist),
             ("release", &self.image_filter.release),
             ("arch", &self.image_filter.arch),
             ("type", &self.image_filter.type_),
-        ];
+        ]
+        .into_iter()
+        .filter(|(_, value)| value.is_some())
+        .collect();
 
-        let result = match image_filter_slice.get(self.index) {
+        let result = match image_filter_collection.get(self.index) {
             Some((key, Some(value))) => (key.to_string(), value.to_string()),
             _ => return None,
         };
@@ -125,5 +128,35 @@ impl Config {
 
         config.validate()?;
         Ok(config)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ImageFilter;
+
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn iterator_field(dist: Option<String>, release: Option<String>, arch: Option<String>, type_: Option<String>) {
+            let image_filter = ImageFilter {
+                dist,
+                release,
+                arch,
+                type_,
+                post_process: None
+            };
+
+            let result = image_filter.clone().into_iter().collect::<Vec<_>>().len();
+            let expected = [
+                &image_filter.dist,&image_filter.release,&image_filter.arch, &image_filter.type_
+            ]
+            .into_iter()
+            .filter(|value| value.is_some())
+            .collect::<Vec<_>>().len();
+
+            assert_eq!(result,expected);
+        }
     }
 }
