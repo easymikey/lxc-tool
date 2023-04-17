@@ -50,7 +50,7 @@ pub fn save_image_metadata(
                 image_metadata.name,
                 path.strip_prefix(root_dir_path)?,
             )
-            .replace("\"", "")
+            .replace('\"', "")
                 + "\n")
                 .as_bytes(),
         )?;
