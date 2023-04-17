@@ -15,7 +15,7 @@ pub struct LXCImageMetadata {
 
 impl LXCImageMetadata {
     pub fn of_metadata(input: &str) -> Result<LXCImageMetadata> {
-        match input.split(";").collect::<Vec<_>>().as_slice() {
+        match input.split(';').collect::<Vec<_>>().as_slice() {
             &[dist, release, arch, type_, name, path] => Ok(LXCImageMetadata {
                 dist: dist.trim().to_string(),
                 release: release.trim().to_string(),
@@ -24,8 +24,8 @@ impl LXCImageMetadata {
                 name: name.trim().to_string(),
                 path: PathBuf::from(
                     path.trim()
-                        .trim_start_matches("/")
-                        .trim_end_matches("/")
+                        .trim_start_matches('/')
+                        .trim_end_matches('/')
                         .to_string()
                         + "/",
                 ),
