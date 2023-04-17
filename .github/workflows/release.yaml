@@ -1,0 +1,36 @@
+name: 🏗 Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛑 Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.11.0
+
+      - name:  ⬇️ Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🤌 Get tag
+        id : get-tag
+        shell: bash
+        run: |
+          echo PKG_VERSION=$(awk -F ' = ' '$1 ~ /version/ { gsub(/["]/, "", $2); printf("%s",$2) }' Cargo.toml) >> $GITHUB_OUTPUT
+
+      - name: ⬆️ Push Tag
+        shell: bash
+        run: |
+          git tag v${{ steps.get-tag.outputs.PKG_VERSION }} && git push --tags
+
+      - name: 🏗 Release
+        uses: taiki-e/create-gh-release-action@v1
+        with:
+          ref: refs/tags/v${{ steps.get-tag.outputs.PKG_VERSION }}
+          token: ${{ secrets.GITHUB_TOKEN }}

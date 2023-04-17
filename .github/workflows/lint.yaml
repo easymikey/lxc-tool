@@ -1,0 +1,33 @@
+name: 🔬 Lint
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛑 Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.11.0
+
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🦀 Setup Rust
+        uses: "actions-rs/toolchain@v1"
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: 🦀 Setup clippy
+        run: rustup component add clippy
+
+      - name: 🔬 Lint
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
