@@ -2,7 +2,7 @@
 authors = ["easymikey <mikhail.avdeev@vk.team>"]
 edition = "2021"
 name = "lxc-tool"
-version = "0.1.2"
+version = "0.1.3"
 
 [profile.release]
 lto = true

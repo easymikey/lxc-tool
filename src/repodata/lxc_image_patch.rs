@@ -31,7 +31,7 @@ pub fn patch_image(
     }
 
     let mut child = Command::new(path_to_script)
-        .args(["-path", tempfile])
+        .args(["--path", tempfile])
         .args(["-d", &metadata.dist])
         .args(["-r", &metadata.release])
         .args(["-a", &metadata.arch])
