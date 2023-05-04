@@ -30,8 +30,6 @@ pub fn create_image_metadata_entries(
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .ok()?;
 
-            println!("{:#?}", path);
-
             let entry_metadata = match path
                 .components()
                 .filter_map(|c| c.as_os_str().to_str())
