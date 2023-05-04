@@ -11,8 +11,8 @@ pub fn create_image_metadata_entries(
     root_dir: &PathBuf,
 ) -> Result<Vec<(LXCImageMetadata, Duration)>> {
     let image_entries: Vec<_> = WalkDir::new(root_dir)
-        .min_depth(5)
-        .max_depth(5)
+        .min_depth(6)
+        .max_depth(6)
         .into_iter()
         .filter_map(|entry| {
             let entry = entry.ok()?;
@@ -29,6 +29,8 @@ pub fn create_image_metadata_entries(
                 .ok()?
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .ok()?;
+
+            println!("{:#?}", path);
 
             let entry_metadata = match path
                 .components()

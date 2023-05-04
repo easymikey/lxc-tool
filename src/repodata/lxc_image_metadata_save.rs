@@ -42,7 +42,7 @@ pub fn save_image_metadata(
 
         file.write_all(
             (format!(
-                "{};{};{};{};{};//{:?}",
+                "{};{};{};{};{};/{:?}",
                 image_metadata.dist,
                 image_metadata.release,
                 image_metadata.arch,
