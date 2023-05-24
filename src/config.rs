@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use url::Url;
@@ -107,6 +107,8 @@ pub struct Repodata {
     pub number_of_container_to_backup: i16,
     // Timeout to the post_script or post process (maybe in the image metadata) that will run after the image is loaded
     pub patcher_timeout: Timeout,
+    // Directory for temporary files. Must be on the same FS as host_root_dir
+    pub temporary_download_directory: PathBuf,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -116,7 +118,36 @@ pub struct Config {
 }
 
 impl Config {
+    fn validate_temprorary_download_directory(&self) -> Result<()> {
+        use std::os::linux::fs::MetadataExt;
+        let temporary_download_directory_device = self
+            .repodata
+            .temporary_download_directory
+            .canonicalize()
+            .with_context(|| "Failed to canonicalize temporary_download_directory")?
+            .metadata()
+            .with_context(|| "Failed to read temporary_download_directory metadata")?
+            .st_dev();
+
+        let host_root_dir_device = self
+            .repodata
+            .host_root_dir
+            .canonicalize()
+            .with_context(|| "Failed to canonicalize host_root_dir")?
+            .metadata()
+            .with_context(|| "Failed to read host_root_dir metadata")?
+            .st_dev();
+
+        if temporary_download_directory_device != host_root_dir_device {
+            bail!("temporary_download_directory device != host_root_dir device")
+        }
+
+        Ok(())
+    }
+
     fn validate(&self) -> Result<()> {
+        self.validate_temprorary_download_directory()?;
+
         Ok(())
     }
 
