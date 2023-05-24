@@ -32,3 +32,5 @@ repodata:
   number_of_container_to_backup: 30
 
   patcher_timeout: 600
+
+  temporary_download_directory: /path/to/tmp/dir
