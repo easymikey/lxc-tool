@@ -36,7 +36,10 @@ pub fn cleanup_image_entries(
             let (removed_dir, _) = &image_entries[0];
             if removed_dir.canonicalize()?.starts_with(root_dir) {
                 fs::remove_dir_all(removed_dir)?;
-                info!("Remove LXC image directory. Directory path: {:?}", removed_dir);
+                info!(
+                    "Remove LXC image directory. Directory path: {:?}",
+                    removed_dir
+                );
                 image_entries.remove(0);
             }
         }

@@ -6,7 +6,7 @@ use std::{cmp::min, io::Write};
 use tempfile::{Builder, NamedTempFile};
 use url::Url;
 
-pub async fn download_image(url: Url) -> Result<NamedTempFile> {
+pub async fn download_image(config: &crate::config::Config, url: Url) -> Result<NamedTempFile> {
     let response = reqwest::get(url.as_str()).await?;
     let total_size = response.content_length().ok_or_else(|| {
         anyhow!(
@@ -21,7 +21,7 @@ pub async fn download_image(url: Url) -> Result<NamedTempFile> {
 
     info!("Download LXC image file '{}' started.", &url);
 
-    let mut tempfile = Builder::new().tempfile()?;
+    let mut tempfile = Builder::new().tempfile_in(&config.repodata.temporary_download_directory)?;
     let mut downloaded_bytes: u64 = 0;
     let mut stream = response.bytes_stream();
 

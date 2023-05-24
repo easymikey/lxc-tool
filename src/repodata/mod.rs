@@ -29,7 +29,7 @@ pub async fn download_images(config: config::Config) -> Result<()> {
     let lxc_image_metadata_collection = LXCImageMetadataCollection::of(&meta_data_url)
         .get()
         .await?
-        .filter_by(config.repodata.image_filters)?;
+        .filter_by(&config.repodata.image_filters)?;
 
     for (lxc_image_metadata, post_process) in lxc_image_metadata_collection {
         let image_tempdir_path = Builder::new().prefix(".repodata_").tempdir()?;
@@ -54,7 +54,7 @@ pub async fn download_images(config: config::Config) -> Result<()> {
                 .origin
                 .join(image_dir)?
                 .join(image_file)?;
-            let tempfile = download_image(download_url).await?;
+            let tempfile = download_image(&config, download_url).await?;
 
             if image_file == "rootfs.tar.xz" {
                 if let Some(post_process) = &post_process {

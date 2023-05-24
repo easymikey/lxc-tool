@@ -50,14 +50,14 @@ impl LXCImageMetadata {
 pub trait FilterBy {
     fn filter_by(
         &self,
-        image_filters: Vec<ImageFilter>,
+        image_filters: &[ImageFilter],
     ) -> Result<Vec<(LXCImageMetadata, Option<PathBuf>)>>;
 }
 
 impl FilterBy for Vec<LXCImageMetadata> {
     fn filter_by(
         &self,
-        image_filters: Vec<ImageFilter>,
+        image_filters: &[ImageFilter],
     ) -> Result<Vec<(LXCImageMetadata, Option<PathBuf>)>> {
         let filtered_containers: Vec<_> = self
             .iter()
