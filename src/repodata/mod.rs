@@ -32,7 +32,9 @@ pub async fn download_images(config: config::Config) -> Result<()> {
         .filter_by(&config.repodata.image_filters)?;
 
     for (lxc_image_metadata, post_process) in lxc_image_metadata_collection {
-        let image_tempdir_path = Builder::new().prefix(".repodata_").tempdir()?;
+        let image_tempdir_path = Builder::new()
+            .prefix(".repodata_")
+            .tempdir_in(&config.repodata.temporary_download_directory)?;
         let image_dir_path = &config.repodata.host_root_dir.join(&lxc_image_metadata.path);
 
         if image_dir_path.exists() {
