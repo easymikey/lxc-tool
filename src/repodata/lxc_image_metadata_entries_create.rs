@@ -1,6 +1,7 @@
 use super::lxc_image_metadata::LXCImageMetadata;
 
 use anyhow::Result;
+use regex::Regex;
 use std::{
     path::PathBuf,
     time::{Duration, SystemTime},
@@ -10,6 +11,8 @@ use walkdir::WalkDir;
 pub fn create_image_metadata_entries(
     root_dir: &PathBuf,
 ) -> Result<Vec<(LXCImageMetadata, Duration)>> {
+    let re = Regex::new(r"/images/.+/.+/.+/.+/\d\d\d\d\d\d\d\d_\d\d:\d\d")?;
+
     let image_entries: Vec<_> = WalkDir::new(root_dir)
         .min_depth(6)
         .max_depth(6)
@@ -17,8 +20,9 @@ pub fn create_image_metadata_entries(
         .filter_map(|entry| {
             let entry = entry.ok()?;
             let path = entry.path();
+            let path_string = path.to_str()?;
 
-            if !path.is_dir() {
+            if !path.is_dir() && !re.is_match(path_string) {
                 return None;
             }
 
@@ -52,6 +56,9 @@ pub fn create_image_metadata_entries(
             Some(entry_metadata)
         })
         .collect();
+
+    println!("create images: {:#?}", image_entries);
+    println!("create images len: {}", image_entries.len());
 
     Ok(image_entries)
 }

@@ -32,6 +32,8 @@ pub fn cleanup_image_entries(
     for mut image_entries in hashed_image_entries.into_values() {
         image_entries.sort_by(|a, b| a.1.cmp(&b.1));
 
+        info!("cleanup_image_entries: {:#?}", image_entries);
+
         while image_entries.len() > number_of_container_to_backup as usize {
             let (removed_dir, _) = &image_entries[0];
             if removed_dir.canonicalize()?.starts_with(root_dir) {
