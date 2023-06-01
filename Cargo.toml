@@ -2,7 +2,7 @@
 authors = ["easymikey <mikhail.avdeev@vk.team>"]
 edition = "2021"
 name = "lxc-tool"
-version = "0.1.7"
+version = "0.1.8"
 
 [profile.release]
 lto = true
@@ -28,6 +28,7 @@ indicatif = "0.17.3"
 walkdir = "2.3.3"
 pwd = "1.4.0"
 nix = "0.26.2"
+regex = "1.8.3"
 
 [dev-dependencies]
 proptest-derive = "0.3.0"
