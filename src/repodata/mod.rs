@@ -16,7 +16,10 @@ use crate::{
 };
 
 use anyhow::{anyhow, Result};
-use std::{fs, os::unix::prelude::PermissionsExt};
+use std::{
+    fs::{self, Permissions},
+    os::unix::prelude::PermissionsExt,
+};
 use tempfile::Builder;
 
 pub async fn download_images(config: config::Config) -> Result<()> {
@@ -69,12 +72,13 @@ pub async fn download_images(config: config::Config) -> Result<()> {
                 }
             }
 
-            fs::rename(&tempfile, &image_tempdir_path.path().join(image_file))?;
-            tempfile.as_file().metadata()?.permissions().set_mode(0o644);
+            let image_temp_path = image_tempdir_path.path().join(image_file);
+            fs::rename(&tempfile, &image_temp_path)?;
+            fs::set_permissions(image_temp_path, Permissions::from_mode(0o644))?;
         }
 
         fs::rename(&image_tempdir_path, image_dir_path)?;
-        image_dir_path.metadata()?.permissions().set_mode(0o755);
+        fs::set_permissions(image_dir_path, Permissions::from_mode(0o755))?;
     }
 
     cleanup_image_entries(
