@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use url::Url;
@@ -118,7 +118,9 @@ pub struct Config {
 }
 
 impl Config {
-    fn validate_temprorary_download_directory(&self) -> Result<()> {
+    #[cfg(target_os = "linux")]
+    fn validate_temporary_download_directory(&self) -> Result<()> {
+        use anyhow::bail;
         use std::os::linux::fs::MetadataExt;
         let temporary_download_directory_device = self
             .repodata
@@ -145,8 +147,13 @@ impl Config {
         Ok(())
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn validate_temporary_download_directory(&self) -> Result<()> {
+        Ok(())
+    }
+
     fn validate(&self) -> Result<()> {
-        self.validate_temprorary_download_directory()?;
+        self.validate_temporary_download_directory()?;
 
         Ok(())
     }
