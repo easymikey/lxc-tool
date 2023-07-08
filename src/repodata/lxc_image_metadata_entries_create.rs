@@ -57,8 +57,5 @@ pub fn create_image_metadata_entries(
         })
         .collect();
 
-    println!("create images: {:#?}", image_entries);
-    println!("create images len: {}", image_entries.len());
-
     Ok(image_entries)
 }
