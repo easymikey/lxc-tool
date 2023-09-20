@@ -65,9 +65,13 @@ pub fn save_image_metadata(
         fs::copy(&image_metadata_path, cp)?;
     }
 
+    let mut index_files = file_copy_list;
+
+    index_files.push(image_metadata_path);
+
     match Passwd::from_name(&username)? {
         Some(passwd) => {
-            for filepath in file_copy_list {
+            for filepath in index_files {
                 unistd::chown(&filepath, Some(passwd.uid.into()), Some(passwd.gid.into()))?;
             }
         }
