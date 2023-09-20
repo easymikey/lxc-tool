@@ -20,14 +20,10 @@ pub fn save_image_metadata(
     info!("Save LXC image metadata started.");
 
     let image_metadata_path = root_dir.join(&metadata_path);
-    let mut file_copy_list = Vec::new();
-    let user_image_metadata_file_path;
     if let Some(parent_dir_path) = &image_metadata_path.parent() {
         if !parent_dir_path.exists() {
             fs::create_dir_all(parent_dir_path)?;
         }
-        user_image_metadata_file_path = parent_dir_path.join("index-user");
-        file_copy_list.push(user_image_metadata_file_path);
     }
 
     let mut file = File::create(&image_metadata_path)?;
@@ -60,7 +56,10 @@ pub fn save_image_metadata(
     }
 
     let copy_image_metadata_path = image_metadata_path.with_extension("7");
-    file_copy_list.push(copy_image_metadata_path);
+    let user_image_metadata_file_path = image_metadata_path.with_file_name("index-user");
+
+    let file_copy_list = vec![copy_image_metadata_path, user_image_metadata_file_path];
+
     for cp in file_copy_list.iter() {
         fs::copy(&image_metadata_path, cp)?;
     }
