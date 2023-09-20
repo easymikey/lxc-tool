@@ -20,6 +20,7 @@ pub fn save_image_metadata(
     info!("Save LXC image metadata started.");
 
     let image_metadata_path = root_dir.join(&metadata_path);
+    let user_image_metadata_path: PathBuf = root_dir.join("meta/1.0/index-user");
 
     if let Some(parent_dir_path) = &image_metadata_path.parent() {
         if !parent_dir_path.exists() {
@@ -59,6 +60,8 @@ pub fn save_image_metadata(
     let copy_image_metadata_path = image_metadata_path.with_extension("7");
 
     fs::copy(&image_metadata_path, &copy_image_metadata_path)?;
+
+    fs::copy(&image_metadata_path, &user_image_metadata_path)?;
 
     match Passwd::from_name(&username)? {
         Some(passwd) => {
