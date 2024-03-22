@@ -104,7 +104,7 @@ pub struct Repodata {
     // Image files to be desired in host_root_dir
     pub image_files: ImageFiles,
     // Numbers of containers to backup
-    pub number_of_container_to_backup: i16,
+    pub number_of_container_to_backup: usize,
     // Timeout to the post_script or post process (maybe in the image metadata) that will run after the image is loaded
     pub patcher_timeout: Timeout,
     // Directory for temporary files. Must be on the same FS as host_root_dir
