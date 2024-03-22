@@ -15,16 +15,15 @@ pub fn cleanup_image_entries(
         image_entries
             .into_iter()
             .fold(HashMap::new(), |mut acc, (image_meta, mtime)| {
-                acc.entry((
-                    image_meta.dist.clone(),
-                    image_meta.release.clone(),
-                    image_meta.arch.clone(),
-                    image_meta.type_.clone(),
-                ))
-                .and_modify(|entries| {
-                    entries.push((image_meta.path.to_owned(), mtime.to_owned()));
-                })
-                .or_insert(Vec::new());
+                let image_entries = acc
+                    .entry((
+                        image_meta.dist,
+                        image_meta.release,
+                        image_meta.arch,
+                        image_meta.type_,
+                    ))
+                    .or_default();
+                image_entries.push((image_meta.path, mtime));
 
                 acc
             });
